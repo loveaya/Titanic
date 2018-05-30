@@ -12,11 +12,11 @@ def chooseBestFeature(dataSet, labels):
 
 def createTree(dataSet, labels, labels_full):
     if 1 == len(labels):
-        return getMinDic(dataSet, labels(0))
+        return getMinDic(dataSet, labels[0])
     else:
         label = chooseBestFeature(dataSet, labels)
-        labels_full.index(label)
-
+        labels = labels.pop(labels.index(label))
+        createTree(dataSet, labels, labels_full)
 
 
 if __name__ == '__main__':
@@ -29,7 +29,7 @@ if __name__ == '__main__':
     data = data[labels]
     dataSet = data.values.tolist()
     labels_full = labels[:-1]
-    print(labels_full.index(labels_full[0]))
+    # print(labels_full.index(labels_full[0]))
     
-    decisionTree = createTree(dataSet, labels_full, labels_full)
+    # decisionTree = createTree(dataSet, labels_full, labels_full)
 
