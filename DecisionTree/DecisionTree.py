@@ -9,7 +9,6 @@ def getMinDic(dataSet, labelIndex):
     result = {}.fromkeys(entrys)
     for entry in entrys:
         result[entry] = 1 if reduce(lambda x, y: x + y, list(map(lambda x: 1 if x[-1] else -1, dataSet))) >= 0 else 0
-    print("result :" + result)
     return result
 
 
