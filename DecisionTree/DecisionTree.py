@@ -8,7 +8,7 @@ def getMinDic(dataSet, labelIndex):
     entrys = set(list(map(lambda x: x[labelIndex], dataSet)))
     result = {}.fromkeys(entrys)
     for entry in entrys:
-        result[entry] = 1 if reduce(lambda x, y: x + y, list(map(lambda x: 1 if x[-1] else -1))) >= 0 else 0
+        result[entry] = 1 if reduce(lambda x, y: x + y, list(map(lambda x: 1 if x[-1] else -1, dataSet))) >= 0 else 0
     print("result :" + result)
     return result
 
@@ -53,7 +53,7 @@ def chooseBestFeature(dataSet, labels, labelsFull):
         infoGain[label] = baseEntropy - afterEntropy
     meanGain = sum(infoGain.values())/len(infoGain.values())
     maxGainRate = 0
-    result = ""
+    result = list(labels)[0]
     for key, value in infoGain.items():
         if value >= meanGain:
             if labelIV[key] == 0 :
@@ -69,24 +69,27 @@ def chooseBestFeature(dataSet, labels, labelsFull):
 
 
 def createTree(dataSet, labels, labelsFull):
+    print("##########")
     # print(dataSet)
     print(labels)
     if 1 == len(labels):
         return getMinDic(dataSet, labelsFull.index(labels.pop()))
 
     else:
-        label = chooseBestFeature(dataSet, labels, labelsFull)
-        # print((label, labels))
-        labels.remove(label)
-        labelIndex = labelsFull.index(label)
+        labelSet = set()
+        while (len(labelSet) == 0):
+            label = chooseBestFeature(dataSet, labels, labelsFull)
+            # print((label, labels))
+            labels.remove(label)
+            labelIndex = labelsFull.index(label)
 
-        cols = len(dataSet)
-        labelEntrys = []
-        for ind in range(cols):
-            labelEntrys.append(dataSet[ind][labelIndex])
-        labelSet = set(list(filter(lambda x: x == x, labelEntrys)))
-
-        # print(labelSet)
+            cols = len(dataSet)
+            labelEntrys = []
+            for ind in range(cols):
+                labelEntrys.append(dataSet[ind][labelIndex])
+            labelSet = set(list(filter(lambda x: x == x, labelEntrys)))
+            # labelSet = set(labelEntrys)
+            # print(labelSet)
         result = {}
         result[label] = {}.fromkeys(labelSet)
         for entry in labelSet:
