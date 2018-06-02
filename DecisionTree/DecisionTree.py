@@ -6,11 +6,13 @@ import pandas as pd
 
 def getMinDic(dataSet, labelIndex, labelsFull):
     entrys = set(list(map(lambda x: x[labelIndex], dataSet)))
-    print("min dict entries:", entrys)
-    result = {labelsFull[labelIndex] : {}.fromkeys(entrys)}
-    for entry in entrys:
-        result[labelsFull[labelIndex]][entry] = 1 if reduce(lambda x, y: x + y, list(map(lambda x: 1 if x[-1] else -1, dataSet))) >= 0 else 0
-    return result
+    if len(entrys) > 1:
+        result = {labelsFull[labelIndex] : {}.fromkeys(entrys)}
+        for entry in entrys:
+            result[labelsFull[labelIndex]][entry] = 1 if reduce(lambda x, y: x + y, list(map(lambda x: 1 if x[-1] else -1, dataSet))) >= 0 else 0
+        return result
+    else:
+        return 1 if reduce(lambda x, y: x + y, list(map(lambda x: 1 if x[-1] else -1, dataSet))) >= 0 else 0
 
 
 def getDataEntrpy(dataSet):
