@@ -4,11 +4,12 @@ from math import log, inf
 import pandas as pd
 
 
-def getMinDic(dataSet, labelIndex):
+def getMinDic(dataSet, labelIndex, labelsFull):
     entrys = set(list(map(lambda x: x[labelIndex], dataSet)))
-    result = {}.fromkeys(entrys)
+    print("min dict entries:", entrys)
+    result = {labelsFull[labelIndex] : {}.fromkeys(entrys)}
     for entry in entrys:
-        result[entry] = 1 if reduce(lambda x, y: x + y, list(map(lambda x: 1 if x[-1] else -1, dataSet))) >= 0 else 0
+        result[labelsFull[labelIndex]][entry] = 1 if reduce(lambda x, y: x + y, list(map(lambda x: 1 if x[-1] else -1, dataSet))) >= 0 else 0
     return result
 
 
@@ -50,9 +51,10 @@ def chooseBestFeature(dataSet, labels, labelsFull):
             entry = entrySet.pop()
             partData = list(filter(lambda x: x[labelIndex] == entry, dataSet))
             prop = len(partData) / float(len(dataSet))
-            afterEntropy = prop * getDataEntrpy(partData)
+            afterEntropy += prop * getDataEntrpy(partData)
         infoGain[label] = baseEntropy - afterEntropy
-    meanGain = sum(infoGain.values()) / len(infoGain.values())
+    meanGain = sum(infoGain.values()) / len(infoGain)
+    print((infoGain.keys(), meanGain))
     maxGainRate = 0
     result = list(labels)[0]
     for key, value in infoGain.items():
@@ -70,43 +72,41 @@ def chooseBestFeature(dataSet, labels, labelsFull):
 
 
 def createTree(dataSet, labels, labelsFull):
-    print("##########")
-    # print(dataSet)
-    print(labels)
-    if 1 == len(labels):
-        return getMinDic(dataSet, labelsFull.index(labels.pop()))
+    labelSet = set()
+    while len(labelSet) <= 1:
+        if 1 == len(labels):
+            return getMinDic(dataSet, labelsFull.index(labels.pop()), labelsFull)
+        label = chooseBestFeature(dataSet, labels, labelsFull)
+        # print((label, labels))
+        labels.remove(label)
+        labelIndex = labelsFull.index(label)
 
-    else:
-        labelSet = set()
-        while len(labelSet) == 0:
-            label = chooseBestFeature(dataSet, labels, labelsFull)
-            # print((label, labels))
-            labels.remove(label)
-            labelIndex = labelsFull.index(label)
-
-            cols = len(dataSet)
-            labelEntrys = []
-            for ind in range(cols):
-                labelEntrys.append(dataSet[ind][labelIndex])
-            labelSet = set(list(filter(lambda x: x == x, labelEntrys)))
-            # labelSet = set(labelEntrys)
-            # print(labelSet)
-        result = {label: {}.fromkeys(labelSet)}
-        for entry in labelSet:
-            # print("key = " + str(entry))
-            partedData = list(filter(lambda x: x[labelIndex] == entry, dataSet))
-            if len(set(list(map(lambda x: x[-1], partedData)))) == 1:
-                result[label][entry] = partedData[0][-1]
-            else:
-                result[label][entry] = createTree(partedData, labels.copy(), labelsFull)
-        return result
+        cols = len(dataSet)
+        labelEntrys = []
+        for ind in range(cols):
+            labelEntrys.append(dataSet[ind][labelIndex])
+        labelSet = set(filter(lambda x: x == x, labelEntrys))
+        # labelSet = set(labelEntrys)
+        # print(labelSet)
+    result = {label: {}.fromkeys(labelSet)}
+    for entry in labelSet:
+        # print("key = " + str(entry))
+        partedData = list(filter(lambda x: x[labelIndex] == entry, dataSet))
+        resultSet = set(map(lambda x: x[-1], partedData))
+        print(resultSet)
+        if len(resultSet) == 1:
+            result[label][entry] = partedData[0][-1]
+        else:
+            result[label][entry] = createTree(partedData, labels.copy(), labelsFull)
+    return result
 
 
 def dataDiscrete(dataSet, index):
     labelSet = set(map(lambda x: x[index], dataSet))
     dataSet = sorted(dataSet, key=lambda x: x[index])
     result = dataSet[:]
-    if len(labelSet) >= 5:
+    if len(labelSet) >= 8:
+        print("label index : " + str(index))
         currentResult = dataSet[0][-1]
         minEntropy = inf
         for ind in range(len(dataSet)):
@@ -117,10 +117,11 @@ def dataDiscrete(dataSet, index):
                 greatList = list(map(lambda x: x[:index] + [">=" + key] + x[index+1:], dataSet[ind:]))
                 propLess = len(lessList) / float(len(dataSet))
                 propGreat = 1 - propLess
-                totalEntropy = 0 - propLess * getDataEntrpy(lessList) - propGreat * getDataEntrpy(greatList)
+                totalEntropy = propLess * getDataEntrpy(lessList) + propGreat * getDataEntrpy(greatList)
                 if totalEntropy < minEntropy:
+                    minEntropy = totalEntropy
                     result = lessList + greatList
-    dataSet = result[:]
+    return result
 
 
 if __name__ == '__main__':
@@ -133,13 +134,17 @@ if __name__ == '__main__':
     data = data[labels]
     dataSet = data.values.tolist()
     # dataSet = data.values.tolist()
-    # 船舱粗分级,并对连续数据离散化
+    # 船舱粗分级,用平均年龄补全缺失年龄，并对连续数据离散化
+    noAgeEmpty = list(map(lambda x: x[2], (filter(lambda x : x[2] == x[2], dataSet))))
+    meanAge = round(reduce(lambda x, y: x + y, noAgeEmpty)/reduce(lambda x , y: x + 1, noAgeEmpty))
     for ind in range(len(dataSet)):
-        dataSet[ind][6] = dataSet[ind][6][0] if type(dataSet[ind][6]).__name__ == 'str' else dataSet[ind][6]
-        for ind2 in range(len(dataSet[ind])):
-            if (type(dataSet[ind][ind2]).__name__ == 'int' or type(dataSet[ind][ind2]).__name__ == 'float') and dataSet[ind][ind2] == dataSet[ind][ind2]:
-                dataDiscrete(dataSet, ind2)
+        dataSet[ind][6] = dataSet[ind][6][0] if type(dataSet[ind][6]).__name__ == 'str' else "Empty"
+        dataSet[ind][2] = meanAge if dataSet[ind][2] != dataSet[ind][2] else dataSet[ind][2]
+    for ind2 in range(len(dataSet[0])):
+        if (type(dataSet[ind][ind2]).__name__ == 'int' or type(dataSet[ind][ind2]).__name__ == 'float') and dataSet[ind][ind2] == dataSet[ind][ind2]:
+            print(type(dataSet[ind][ind2]).__name__ )
+            dataSet = dataDiscrete(dataSet, ind2)
     labelsFull = labels[:-1]
     # print(labels_full.index(labels_full[0]))
-    result = createTree(dataSet, set(labelsFull), labelsFull)
-    print(result)
+    resultTree = createTree(dataSet, set(labelsFull), labelsFull)
+    print(resultTree)
