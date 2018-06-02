@@ -149,4 +149,6 @@ if __name__ == '__main__':
     labelsFull = labels[:-1]
     # print(labels_full.index(labels_full[0]))
     resultTree = createTree(dataSet, set(labelsFull), labelsFull)
-    print(resultTree)
+    # print(resultTree)
+
+    testData = pd.read_csv("../SourceData/test.csv")
