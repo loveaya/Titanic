@@ -58,7 +58,7 @@ def chooseBestFeature(dataSet, labels, labelsFull):
             afterEntropy += prop * getDataEntrpy(partData)
         infoGain[label] = baseEntropy - afterEntropy
     meanGain = sum(infoGain.values()) / len(infoGain)
-    print((infoGain.keys(), meanGain))
+    # print((infoGain.keys(), meanGain))
     maxGainRate = 0
     result = list(labels)[0]
     for key, value in infoGain.items():
@@ -95,7 +95,6 @@ def createTree(dataSet, labels, labelsFull):
         # print("key = " + str(entry))
         partedData = list(filter(lambda x: x[labelIndex] == entry, dataSet))
         resultSet = set(map(lambda x: x[-1], partedData))
-        print(resultSet)
         if len(resultSet) == 1:
             result[label][entry] = partedData[0][-1]
         else:
@@ -109,8 +108,7 @@ def dataDiscrete(dataSet, index):
     dataSet = list(filter(lambda x: x[index] != 'Unknown', dataSet))
     dataSet = sorted(dataSet, key=lambda x: x[index])
     result = dataSet[:]
-    if len(labelSet) >= 8:
-        print("label index : " + str(index))
+    if len(labelSet) > 3:
         currentResult = dataSet[0][-1]
         minEntropy = inf
         for ind in range(1, len(dataSet)):
@@ -132,6 +130,8 @@ def parseData(line):
     line[4] = 'Unknown' if line[4] != line[4] else ('<9.0' if line[4] < 9.0 else '>=9.0')
     line[8] = '<11.1333' if line[8] < 11.1333 else '>=11.1333'
     line[9] = 'Empty' if line[9] != line[9] else line[9][0]
+    line[6] = '<4' if line[6] < 4 else '>=4'
+    line[5] = '<3' if line[5] < 3 else '>=3'
     return line
 
 
@@ -139,13 +139,11 @@ def getResult(itemMap, tree):
     if type(tree).__name__ == 'dict':
         key1 = list(tree.keys())[0]
         key2 = itemMap[key1]
-        print(key1, key2)
         if key2 in tree[key1]:
             return getResult(itemMap, tree[key1][key2])
         else:
             return getResult(itemMap, tree[key1][choice(list(tree[key1].keys()))])
     else:
-        print("return :: " + str(tree))
         return tree
 
 
@@ -153,7 +151,6 @@ def getResultFromTree(testDataSet, resultTree, labels):
     resultList = list()
     for item in testDataSet:
         itemMap = dict(zip(labels, item))
-        print(itemMap)
         resultList.append(getResult(itemMap, resultTree.copy()))
     return resultList
 
@@ -178,7 +175,7 @@ if __name__ == '__main__':
         if type(dataSet[ind][ind2]).__name__ == 'int' \
                 or type(dataSet[ind][ind2]).__name__ == 'float' \
                 or dataSet[ind][ind2] == 'Unknown':
-            print(type(dataSet[ind][ind2]).__name__)
+            # print(type(dataSet[ind][ind2]).__name__)
             dataSet = dataDiscrete(dataSet, ind2)
     labelsFull = labels[:-1]
     resultTree = createTree(dataSet, labelsFull[:], labelsFull)
